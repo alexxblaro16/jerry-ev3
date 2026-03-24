@@ -107,7 +107,7 @@ while Button.CENTER not in ev3.buttons.pressed():
 wait(300)
 
 # Cuenta atrás reglamentaria de 5 segundos
-for i in range(5, 0, -1):
+for i in range(3, 0, -1):
     ev3.screen.clear()
     ev3.screen.print("  CUENTA ATRAS ")
     ev3.screen.print("      " + str(i) + "        ")
