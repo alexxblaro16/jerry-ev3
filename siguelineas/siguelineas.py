@@ -14,38 +14,26 @@ sensor_izq    = ColorSensor(Port.S4)
 sensor_centro = ColorSensor(Port.S3)
 sensor_der    = ColorSensor(Port.S1)
 
-VEL_RECTA  = 280
-VEL_CURVA  = 110
-VEL_90     = 55
+VEL_RECTA  = 200
+VEL_CURVA  = 90
+VEL_90     = 45
 
-GIRO_90      = 195
+GIRO_90      = 190
 GIRO_RESCATE = 130
 
-# Mismo PD que el original (funcionaba perfecto)
 KP = 1.4
 KD = 4.5
 
 UMBRAL_NEGRO  = 25
 UMBRAL_BLANCO = 60
 
-TIEMPO_DIAMANTE_MS   = 220
-COOLDOWN_DIAMANTE_MS = 150
-COOLDOWN_CURVA_MS    = 100
-IMPULSO_CURVA_MS     = 60
-VEL_RETRO_RESCATE    = -80
-TIEMPO_RETRO_RESCATE = 100
-
-# Aceleración moderada para transiciones suaves
-robot.settings(straight_speed=VEL_RECTA, straight_acceleration=600,
-               turn_rate=GIRO_90, turn_acceleration=400)
+TIEMPO_DIAMANTE_MS = 220
 
 error_previo        = 0
 ultimo_error_valido = 0
 en_diamante         = False
-rescate_retroceso   = False
+cooldown            = 0
 temporizador        = StopWatch()
-cooldown_timer      = StopWatch()
-cooldown_duracion   = 0
 
 def zona(val):
     if val < UMBRAL_NEGRO:
@@ -103,7 +91,6 @@ while True:
         ev3.screen.print("  CENTER para  ")
         ev3.screen.print("    pausar     ")
         ev3.light.on(Color.GREEN)
-        error_previo = 0
         wait(200)
 
     l_izq = sensor_izq.reflection()
@@ -114,30 +101,26 @@ while True:
     ce = zona(l_cen)
     de = zona(l_der)
 
-    en_cooldown = cooldown_timer.time() < cooldown_duracion
-
-    # Resetear flag de retroceso cuando ya no estamos en rescate
-    if not (iz == 2 and ce == 2 and de == 2):
-        rescate_retroceso = False
+    if cooldown > 0:
+        cooldown -= 1
 
     # --------------------------------------------------
     # CASO 1: DIAMANTE
     # --------------------------------------------------
-    if iz == 0 and ce == 0 and de == 0 and not en_diamante and not en_cooldown:
+    if iz == 0 and ce == 0 and de == 0 and not en_diamante and cooldown == 0:
         ev3.light.on(Color.RED)
         en_diamante = True
         temporizador.reset()
 
         while temporizador.time() < TIEMPO_DIAMANTE_MS:
-            robot.drive(VEL_RECTA, 0)
+            robot.drive(300, 0)
             wait(5)
 
-        robot.drive(VEL_CURVA, 0)
-        wait(80)
+        robot.drive(VEL_RECTA, 0)
+        wait(60)
 
         en_diamante = False
-        cooldown_timer.reset()
-        cooldown_duracion = COOLDOWN_DIAMANTE_MS
+        cooldown = 30
         error_previo = 0
         continue
 
@@ -146,16 +129,6 @@ while True:
     # --------------------------------------------------
     if iz == 2 and ce == 2 and de == 2:
         ev3.light.on(Color.ORANGE)
-
-        # Retroceder un poco antes de girar (solo la primera vez)
-        if not rescate_retroceso:
-            t = StopWatch()
-            while t.time() < TIEMPO_RETRO_RESCATE:
-                robot.drive(VEL_RETRO_RESCATE, 0)
-                wait(5)
-            robot.stop()
-            rescate_retroceso = True
-
         if ultimo_error_valido >= 0:
             robot.drive(0, GIRO_RESCATE)
         else:
@@ -166,14 +139,10 @@ while True:
     # --------------------------------------------------
     # CASO 3: CURVA 90° IZQUIERDA
     # --------------------------------------------------
-    if iz == 0 and ce == 2 and de == 2 and not en_cooldown:
+    if iz == 0 and ce == 2 and de == 2 and cooldown == 0:
         ev3.light.on(Color.YELLOW)
-
-        # Impulso hacia adelante para desplazar centro de giro a la esquina
-        t = StopWatch()
-        while t.time() < IMPULSO_CURVA_MS:
-            robot.drive(VEL_CURVA, 0)
-            wait(5)
+        robot.stop()
+        wait(60)
 
         t = StopWatch()
         while t.time() < 2500:
@@ -183,24 +152,19 @@ while True:
                 break
 
         robot.stop()
-        wait(30)
+        wait(40)
         ultimo_error_valido = -1
         error_previo = 0
-        cooldown_timer.reset()
-        cooldown_duracion = COOLDOWN_CURVA_MS
+        cooldown = 20
         continue
 
     # --------------------------------------------------
     # CASO 4: CURVA 90° DERECHA
     # --------------------------------------------------
-    if de == 0 and ce == 2 and iz == 2 and not en_cooldown:
+    if de == 0 and ce == 2 and iz == 2 and cooldown == 0:
         ev3.light.on(Color.YELLOW)
-
-        # Impulso hacia adelante para desplazar centro de giro a la esquina
-        t = StopWatch()
-        while t.time() < IMPULSO_CURVA_MS:
-            robot.drive(VEL_CURVA, 0)
-            wait(5)
+        robot.stop()
+        wait(60)
 
         t = StopWatch()
         while t.time() < 2500:
@@ -210,15 +174,14 @@ while True:
                 break
 
         robot.stop()
-        wait(30)
+        wait(40)
         ultimo_error_valido = 1
         error_previo = 0
-        cooldown_timer.reset()
-        cooldown_duracion = COOLDOWN_CURVA_MS
+        cooldown = 20
         continue
 
     # --------------------------------------------------
-    # CASO 5: SIGUELÍNEAS PD (mismo que el original)
+    # CASO 5: SIGUELÍNEAS PD
     # --------------------------------------------------
     ev3.light.on(Color.GREEN)
 
@@ -240,6 +203,10 @@ while True:
     derivada = error - error_previo
     giro = (error * kp_actual) + (derivada * KD)
     giro = max(-GIRO_90, min(GIRO_90, giro))
+
+    # En recta (centro negro), ignorar correcciones de ruido
+    if ce == 0 and abs(error) < 6:
+        giro = 0
 
     robot.drive(velocidad, giro)
     error_previo = error
