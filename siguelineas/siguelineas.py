@@ -33,6 +33,7 @@ BANDA_MUERTA  = 8  # Error por debajo de esto en recta = ir recto sin corregir
 TIEMPO_DIAMANTE_MS = 220
 COOLDOWN_DIAMANTE_MS = 150
 COOLDOWN_CURVA_MS    = 100
+IMPULSO_CURVA_MS     = 60
 
 # Aceleración agresiva para transiciones rápidas entre velocidades
 robot.settings(straight_speed=VEL_MAX, straight_acceleration=800,
@@ -161,8 +162,12 @@ while True:
     # --------------------------------------------------
     if iz == 0 and ce == 2 and de == 2 and not en_cooldown:
         ev3.light.on(Color.YELLOW)
-        robot.stop()
-        wait(30)
+
+        # Impulso hacia adelante para desplazar centro de giro a la esquina
+        t = StopWatch()
+        while t.time() < IMPULSO_CURVA_MS:
+            robot.drive(VEL_CURVA, 0)
+            wait(2)
 
         t = StopWatch()
         while t.time() < 2500:
@@ -172,7 +177,7 @@ while True:
                 break
 
         robot.stop()
-        wait(20)
+        wait(15)
         ultimo_error_valido = -1
         error_previo = 0
         err_h0 = err_h1 = err_h2 = 0
@@ -185,8 +190,12 @@ while True:
     # --------------------------------------------------
     if de == 0 and ce == 2 and iz == 2 and not en_cooldown:
         ev3.light.on(Color.YELLOW)
-        robot.stop()
-        wait(30)
+
+        # Impulso hacia adelante para desplazar centro de giro a la esquina
+        t = StopWatch()
+        while t.time() < IMPULSO_CURVA_MS:
+            robot.drive(VEL_CURVA, 0)
+            wait(2)
 
         t = StopWatch()
         while t.time() < 2500:
@@ -196,7 +205,7 @@ while True:
                 break
 
         robot.stop()
-        wait(20)
+        wait(15)
         ultimo_error_valido = 1
         error_previo = 0
         err_h0 = err_h1 = err_h2 = 0
