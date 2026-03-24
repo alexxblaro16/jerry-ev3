@@ -115,6 +115,9 @@ while True:
         ev3.screen.print("  CENTER para  ")
         ev3.screen.print("    pausar     ")
         ev3.light.on(Color.GREEN)
+        vel_actual = VEL_CURVA
+        error_previo = 0
+        err_h0 = err_h1 = err_h2 = 0
         wait(200)
 
     l_izq = sensor_izq.reflection()
@@ -151,6 +154,7 @@ while True:
         cooldown_duracion = COOLDOWN_DIAMANTE_MS
         error_previo = 0
         err_h0 = err_h1 = err_h2 = 0
+        vel_actual = VEL_RECTA
         continue
 
     # --------------------------------------------------
@@ -167,6 +171,7 @@ while True:
                 wait(2)
             robot.stop()
             rescate_retroceso = True
+            vel_actual = VEL_CURVA
 
         if ultimo_error_valido >= 0:
             robot.drive(0, GIRO_RESCATE)
@@ -199,6 +204,7 @@ while True:
         ultimo_error_valido = -1
         error_previo = 0
         err_h0 = err_h1 = err_h2 = 0
+        vel_actual = VEL_CURVA
         cooldown_timer.reset()
         cooldown_duracion = COOLDOWN_CURVA_MS
         continue
@@ -227,6 +233,7 @@ while True:
         ultimo_error_valido = 1
         error_previo = 0
         err_h0 = err_h1 = err_h2 = 0
+        vel_actual = VEL_CURVA
         cooldown_timer.reset()
         cooldown_duracion = COOLDOWN_CURVA_MS
         continue
