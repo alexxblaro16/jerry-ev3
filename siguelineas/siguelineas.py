@@ -131,11 +131,11 @@ while True:
         temporizador.reset()
 
         while temporizador.time() < TIEMPO_DIAMANTE_MS:
-            robot.drive(VEL_RECTA, 0)
+            robot.drive(VEL_MAX, 0)
             wait(5)
 
-        robot.drive(VEL_CURVA, 0)
-        wait(80)
+        robot.drive(VEL_RECTA, 0)
+        wait(60)
 
         en_diamante = False
         cooldown_timer.reset()
