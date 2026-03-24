@@ -42,6 +42,7 @@ robot.settings(straight_speed=VEL_MAX, straight_acceleration=800,
 error_previo        = 0
 ultimo_error_valido = 0
 en_diamante         = False
+vel_actual          = VEL_CURVA
 temporizador        = StopWatch()
 cooldown_timer      = StopWatch()
 cooldown_duracion   = 0
@@ -233,35 +234,42 @@ while True:
     recta_confirmada = (ce == 0 and iz == 2 and de == 2 and abs(error) < BANDA_MUERTA)
 
     if recta_confirmada:
-        # Banda muerta: ir recto a máxima velocidad sin correcciones
-        robot.drive(VEL_MAX, 0)
+        # Banda muerta: acelerar progresivamente hacia VEL_MAX
+        vel_actual = min(vel_actual + 15, VEL_MAX)
+        robot.drive(vel_actual, 0)
         error_previo = 0
     else:
         # Velocidad continua: menos error = más rápido
         error_abs = abs(error)
         if ce == 0:
-            # Centro en negro: velocidad proporcional entre VEL_RECTA y VEL_MAX
+            # Centro en negro: velocidad proporcional entre VEL_CURVA y VEL_RECTA
             factor = max(0, 1 - error_abs / 40)
-            velocidad = VEL_CURVA + int((VEL_RECTA - VEL_CURVA) * factor)
+            vel_objetivo = VEL_CURVA + int((VEL_RECTA - VEL_CURVA) * factor)
             kp_actual = KP * 0.55
             kd_actual = KD_RECTA
         elif ce == 1:
-            # Centro en gris: velocidad proporcional entre VEL_CURVA*0.75 y VEL_CURVA
+            # Centro en gris: velocidad proporcional
             factor = max(0, 1 - error_abs / 50)
-            velocidad = int(VEL_CURVA * 0.75) + int((VEL_CURVA - VEL_CURVA * 0.75) * factor)
+            vel_objetivo = int(VEL_CURVA * 0.75) + int((VEL_CURVA - VEL_CURVA * 0.75) * factor)
             kp_actual = KP
             kd_actual = KD_CURVA
         else:
             # Centro en blanco: velocidad mínima, máxima corrección
-            velocidad = int(VEL_CURVA * 0.6)
+            vel_objetivo = int(VEL_CURVA * 0.6)
             kp_actual = KP * 1.4
             kd_actual = KD_CURVA
+
+        # Frenado progresivo: baja rápido, sube gradual
+        if vel_objetivo < vel_actual:
+            vel_actual = vel_actual - min(30, vel_actual - vel_objetivo)
+        else:
+            vel_actual = vel_actual + min(10, vel_objetivo - vel_actual)
 
         derivada = error - error_previo
         giro = (error * kp_actual) + (derivada * kd_actual)
         giro = max(-GIRO_90, min(GIRO_90, giro))
 
-        robot.drive(velocidad, giro)
+        robot.drive(vel_actual, giro)
         error_previo = error
 
     wait(2)
