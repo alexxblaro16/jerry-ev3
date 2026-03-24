@@ -250,8 +250,8 @@ try:
     ev3.screen.print("10.230.151.13:8080")
     ev3.screen.print("NO ME PISES PORFA :)")
 
-    VEL_RECTA = 800
-    VEL_GIRO  = 300
+    VEL_RECTA = 1000
+    VEL_GIRO  = 400
 
     while True:
         try:
