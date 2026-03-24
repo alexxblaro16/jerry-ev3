@@ -37,9 +37,9 @@ COOLDOWN_DIAMANTE_MS = 150
 COOLDOWN_CURVA_MS    = 100
 IMPULSO_CURVA_MS     = 60
 
-# Aceleración agresiva para transiciones rápidas entre velocidades
-robot.settings(straight_speed=VEL_MAX, straight_acceleration=800,
-               turn_rate=GIRO_90, turn_acceleration=600)
+# Aceleración alta para que el hardware no frene lo que el software ya controla
+robot.settings(straight_speed=VEL_MAX, straight_acceleration=1200,
+               turn_rate=GIRO_90, turn_acceleration=900)
 
 error_previo        = 0
 ultimo_error_valido = 0
