@@ -106,7 +106,6 @@ while True:
     # PRIORIDAD 1B: BORDE FRONTAL
     if borde_frontal():
         ev3.light.on(Color.RED)
-        ev3.speaker.beep(frequency=200, duration=50)
 
         if borde_izq() and not borde_der():
             giro_escape = 200
@@ -136,7 +135,6 @@ while True:
     # PRIORIDAD 2: RIVAL DETECTADO
     if distancia < UMBRAL_US:
         ev3.light.on(Color.RED)
-        ev3.speaker.beep(frequency=1000, duration=50)
         robot.drive(VEL_ATAQUE, 0)
         wait(5)
         continue
