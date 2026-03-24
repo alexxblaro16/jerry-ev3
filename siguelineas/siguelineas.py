@@ -17,9 +17,9 @@ sensor_der    = ColorSensor(Port.S1)
 VEL_MAX    = 350   # Recta confirmada (centro negro + error bajo)
 VEL_RECTA  = 200   # Centro en negro pero con algo de error
 VEL_CURVA  = 100   # Centro en gris (entrando en curva)
-VEL_90     = 45
+VEL_90     = 65
 
-GIRO_90      = 190
+GIRO_90      = 200
 GIRO_RESCATE = 130
 
 KP       = 1.4
@@ -154,7 +154,7 @@ while True:
     if iz == 0 and ce == 2 and de == 2 and cooldown == 0:
         ev3.light.on(Color.YELLOW)
         robot.stop()
-        wait(60)
+        wait(30)
 
         t = StopWatch()
         while t.time() < 2500:
@@ -164,7 +164,7 @@ while True:
                 break
 
         robot.stop()
-        wait(40)
+        wait(20)
         ultimo_error_valido = -1
         error_previo = 0
         cooldown = 20
@@ -176,7 +176,7 @@ while True:
     if de == 0 and ce == 2 and iz == 2 and cooldown == 0:
         ev3.light.on(Color.YELLOW)
         robot.stop()
-        wait(60)
+        wait(30)
 
         t = StopWatch()
         while t.time() < 2500:
@@ -186,7 +186,7 @@ while True:
                 break
 
         robot.stop()
-        wait(40)
+        wait(20)
         ultimo_error_valido = 1
         error_previo = 0
         cooldown = 20
