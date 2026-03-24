@@ -22,7 +22,7 @@ VEL_BUSQUEDA = 300
 VEL_RETRO    = -600
 VEL_AVANCE   = 800
 
-UMBRAL_US    = 95
+UMBRAL_US    = 120
 UMBRAL_NEGRO = 25
 
 TIEMPO_RETRO_MS  = 150
@@ -168,25 +168,37 @@ while True:
         while sensor_us.distance() < UMBRAL_US:
             robot.drive(VEL_ATAQUE, 0)
             wait(2)
-
-            # Si toca borde, escapar INMEDIATAMENTE
             if en_borde():
                 escapar_borde()
                 break
+
+        # Perdió al rival: seguir embistiendo 300ms (puede estar debajo)
+        # Un robot de 4cm puede desaparecer del US momentáneamente
+        temporizador.reset()
+        while temporizador.time() < 300:
+            robot.drive(VEL_ATAQUE, 0)
+            wait(2)
+            if en_borde():
+                escapar_borde()
+                break
+            # Si lo vuelve a ver, volver al bucle de ataque principal
+            if sensor_us.distance() < UMBRAL_US:
+                break
+
         continue
 
     # === BÚSQUEDA: girar buscando rival ===
     ev3.light.on(Color.YELLOW)
 
-    # Girar en el sitio buscando al rival (más efectivo que ir recto)
-    if busqueda_timer.time() < 1000:
-        robot.drive(0, ultimo_giro * 200)
+    # Girar rápido buscando al rival
+    if busqueda_timer.time() < 600:
+        robot.drive(0, ultimo_giro * 300)
+    elif busqueda_timer.time() < 1000:
+        # Avanzar buscando
+        robot.drive(VEL_BUSQUEDA, ultimo_giro * 50)
     else:
-        # Avanzar un poco y volver a buscar girando
-        robot.drive(VEL_BUSQUEDA, 0)
-        if busqueda_timer.time() > 1500:
-            ultimo_giro = -ultimo_giro
-            busqueda_timer.reset()
+        ultimo_giro = -ultimo_giro
+        busqueda_timer.reset()
 
     # Protección de borde incluso en búsqueda
     if en_borde():
