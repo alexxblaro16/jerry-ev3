@@ -31,6 +31,8 @@ UMBRAL_BLANCO = 60
 BANDA_MUERTA  = 8  # Error por debajo de esto en recta = ir recto sin corregir
 
 TIEMPO_DIAMANTE_MS = 220
+COOLDOWN_DIAMANTE_MS = 150
+COOLDOWN_CURVA_MS    = 100
 
 # Aceleración agresiva para transiciones rápidas entre velocidades
 robot.settings(straight_speed=VEL_MAX, straight_acceleration=800,
@@ -39,8 +41,9 @@ robot.settings(straight_speed=VEL_MAX, straight_acceleration=800,
 error_previo        = 0
 ultimo_error_valido = 0
 en_diamante         = False
-cooldown            = 0
 temporizador        = StopWatch()
+cooldown_timer      = StopWatch()
+cooldown_duracion   = 0
 
 # Historial para media móvil (3 muestras)
 err_h0 = 0
@@ -117,13 +120,12 @@ while True:
     ce = zona(l_cen)
     de = zona(l_der)
 
-    if cooldown > 0:
-        cooldown -= 1
+    en_cooldown = cooldown_timer.time() < cooldown_duracion
 
     # --------------------------------------------------
     # CASO 1: DIAMANTE
     # --------------------------------------------------
-    if iz == 0 and ce == 0 and de == 0 and not en_diamante and cooldown == 0:
+    if iz == 0 and ce == 0 and de == 0 and not en_diamante and not en_cooldown:
         ev3.light.on(Color.RED)
         en_diamante = True
         temporizador.reset()
@@ -136,7 +138,8 @@ while True:
         wait(80)
 
         en_diamante = False
-        cooldown = 30
+        cooldown_timer.reset()
+        cooldown_duracion = COOLDOWN_DIAMANTE_MS
         error_previo = 0
         err_h0 = err_h1 = err_h2 = 0
         continue
@@ -156,7 +159,7 @@ while True:
     # --------------------------------------------------
     # CASO 3: CURVA 90° IZQUIERDA
     # --------------------------------------------------
-    if iz == 0 and ce == 2 and de == 2 and cooldown == 0:
+    if iz == 0 and ce == 2 and de == 2 and not en_cooldown:
         ev3.light.on(Color.YELLOW)
         robot.stop()
         wait(30)
@@ -173,13 +176,14 @@ while True:
         ultimo_error_valido = -1
         error_previo = 0
         err_h0 = err_h1 = err_h2 = 0
-        cooldown = 20
+        cooldown_timer.reset()
+        cooldown_duracion = COOLDOWN_CURVA_MS
         continue
 
     # --------------------------------------------------
     # CASO 4: CURVA 90° DERECHA
     # --------------------------------------------------
-    if de == 0 and ce == 2 and iz == 2 and cooldown == 0:
+    if de == 0 and ce == 2 and iz == 2 and not en_cooldown:
         ev3.light.on(Color.YELLOW)
         robot.stop()
         wait(30)
@@ -196,7 +200,8 @@ while True:
         ultimo_error_valido = 1
         error_previo = 0
         err_h0 = err_h1 = err_h2 = 0
-        cooldown = 20
+        cooldown_timer.reset()
+        cooldown_duracion = COOLDOWN_CURVA_MS
         continue
 
     # --------------------------------------------------
