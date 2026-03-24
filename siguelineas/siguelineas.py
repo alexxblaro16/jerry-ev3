@@ -144,7 +144,7 @@ while True:
 
         while temporizador.time() < TIEMPO_DIAMANTE_MS:
             robot.drive(VEL_MAX, 0)
-            wait(5)
+            wait(2)
 
         robot.drive(VEL_RECTA, 0)
         wait(60)
@@ -177,7 +177,7 @@ while True:
             robot.drive(0, GIRO_RESCATE)
         else:
             robot.drive(0, -GIRO_RESCATE)
-        wait(5)
+        wait(2)
         continue
 
     # --------------------------------------------------
@@ -195,7 +195,7 @@ while True:
         t = StopWatch()
         while t.time() < 2500:
             robot.drive(VEL_90, -GIRO_90)
-            wait(5)
+            wait(2)
             if zona(sensor_centro.reflection()) == 0:
                 break
 
@@ -224,7 +224,7 @@ while True:
         t = StopWatch()
         while t.time() < 2500:
             robot.drive(VEL_90, GIRO_90)
-            wait(5)
+            wait(2)
             if zona(sensor_centro.reflection()) == 0:
                 break
 
