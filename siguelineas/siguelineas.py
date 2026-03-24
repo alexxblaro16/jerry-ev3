@@ -134,6 +134,7 @@ while True:
         en_diamante = False
         cooldown = 30
         error_previo = 0
+        err_h0 = err_h1 = err_h2 = 0
         continue
 
     # --------------------------------------------------
@@ -167,6 +168,7 @@ while True:
         wait(20)
         ultimo_error_valido = -1
         error_previo = 0
+        err_h0 = err_h1 = err_h2 = 0
         cooldown = 20
         continue
 
@@ -189,6 +191,7 @@ while True:
         wait(20)
         ultimo_error_valido = 1
         error_previo = 0
+        err_h0 = err_h1 = err_h2 = 0
         cooldown = 20
         continue
 
