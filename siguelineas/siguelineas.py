@@ -20,7 +20,9 @@ VEL_CURVA  = 100   # Centro en gris (entrando en curva)
 VEL_90     = 65
 
 GIRO_90      = 200
-GIRO_RESCATE = 130
+GIRO_RESCATE     = 130
+VEL_RETRO_RESCATE = -80
+TIEMPO_RETRO_RESCATE_MS = 100
 
 KP       = 1.4
 KD_RECTA = 1.5    # Derivada suave en recta (no amplifica ruido)
@@ -43,6 +45,7 @@ error_previo        = 0
 ultimo_error_valido = 0
 en_diamante         = False
 vel_actual          = VEL_CURVA
+rescate_retroceso   = False
 temporizador        = StopWatch()
 cooldown_timer      = StopWatch()
 cooldown_duracion   = 0
@@ -124,6 +127,10 @@ while True:
 
     en_cooldown = cooldown_timer.time() < cooldown_duracion
 
+    # Resetear flag de retroceso cuando ya no estamos en rescate
+    if not (iz == 2 and ce == 2 and de == 2):
+        rescate_retroceso = False
+
     # --------------------------------------------------
     # CASO 1: DIAMANTE
     # --------------------------------------------------
@@ -151,6 +158,16 @@ while True:
     # --------------------------------------------------
     if iz == 2 and ce == 2 and de == 2:
         ev3.light.on(Color.ORANGE)
+
+        # Retroceder un poco antes de girar (solo la primera vez)
+        if not rescate_retroceso:
+            t = StopWatch()
+            while t.time() < TIEMPO_RETRO_RESCATE_MS:
+                robot.drive(VEL_RETRO_RESCATE, 0)
+                wait(2)
+            robot.stop()
+            rescate_retroceso = True
+
         if ultimo_error_valido >= 0:
             robot.drive(0, GIRO_RESCATE)
         else:
