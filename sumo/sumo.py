@@ -135,6 +135,12 @@ while True:
             robot.drive(0, giro_escape)
             wait(2)
 
+        # Si el rival sigue ahí tras escapar, atacar inmediatamente
+        if sensor_us.distance() < UMBRAL_US:
+            robot.drive(VEL_ATAQUE, 0)
+            rival_visto = True
+            busqueda_timer.reset()
+
         continue
 
     # PRIORIDAD 2: RIVAL DETECTADO
