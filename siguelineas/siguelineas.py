@@ -14,46 +14,38 @@ sensor_izq    = ColorSensor(Port.S4)
 sensor_centro = ColorSensor(Port.S3)
 sensor_der    = ColorSensor(Port.S1)
 
-VEL_MAX    = 350   # Recta confirmada (centro negro + error bajo)
-VEL_RECTA  = 200   # Centro en negro pero con algo de error
-VEL_CURVA  = 100   # Centro en gris (entrando en curva)
-VEL_90     = 65
+VEL_RECTA  = 280
+VEL_CURVA  = 110
+VEL_90     = 55
 
-GIRO_90              = 200
-GIRO_RESCATE         = 130
-VEL_RETRO_RESCATE    = -80
-TIEMPO_RETRO_RESCATE = 100
+GIRO_90      = 195
+GIRO_RESCATE = 130
 
-KP       = 1.4
-KD_RECTA = 1.5    # Derivada suave en recta (no amplifica ruido)
-KD_CURVA = 4.5    # Derivada fuerte en curva (reacción rápida)
+# Mismo PD que el original (funcionaba perfecto)
+KP = 1.4
+KD = 4.5
 
 UMBRAL_NEGRO  = 25
 UMBRAL_BLANCO = 60
-BANDA_MUERTA  = 8  # Error por debajo de esto en recta = ir recto sin corregir
 
-TIEMPO_DIAMANTE_MS = 220
+TIEMPO_DIAMANTE_MS   = 220
 COOLDOWN_DIAMANTE_MS = 150
 COOLDOWN_CURVA_MS    = 100
 IMPULSO_CURVA_MS     = 60
+VEL_RETRO_RESCATE    = -80
+TIEMPO_RETRO_RESCATE = 100
 
-# Aceleración alta para que el hardware no frene lo que el software ya controla
-robot.settings(straight_speed=VEL_MAX, straight_acceleration=1200,
-               turn_rate=GIRO_90, turn_acceleration=900)
+# Aceleración moderada para transiciones suaves
+robot.settings(straight_speed=VEL_RECTA, straight_acceleration=600,
+               turn_rate=GIRO_90, turn_acceleration=400)
 
 error_previo        = 0
 ultimo_error_valido = 0
 en_diamante         = False
-vel_actual          = VEL_CURVA
 rescate_retroceso   = False
 temporizador        = StopWatch()
 cooldown_timer      = StopWatch()
 cooldown_duracion   = 0
-
-# Historial para media móvil (3 muestras)
-err_h0 = 0
-err_h1 = 0
-err_h2 = 0
 
 def zona(val):
     if val < UMBRAL_NEGRO:
@@ -111,9 +103,7 @@ while True:
         ev3.screen.print("  CENTER para  ")
         ev3.screen.print("    pausar     ")
         ev3.light.on(Color.GREEN)
-        vel_actual = VEL_CURVA
         error_previo = 0
-        err_h0 = err_h1 = err_h2 = 0
         wait(200)
 
     l_izq = sensor_izq.reflection()
@@ -139,18 +129,16 @@ while True:
         temporizador.reset()
 
         while temporizador.time() < TIEMPO_DIAMANTE_MS:
-            robot.drive(VEL_MAX, 0)
-            wait(2)
+            robot.drive(VEL_RECTA, 0)
+            wait(5)
 
-        robot.drive(VEL_RECTA, 0)
-        wait(60)
+        robot.drive(VEL_CURVA, 0)
+        wait(80)
 
         en_diamante = False
         cooldown_timer.reset()
         cooldown_duracion = COOLDOWN_DIAMANTE_MS
         error_previo = 0
-        err_h0 = err_h1 = err_h2 = 0
-        vel_actual = VEL_RECTA
         continue
 
     # --------------------------------------------------
@@ -164,16 +152,15 @@ while True:
             t = StopWatch()
             while t.time() < TIEMPO_RETRO_RESCATE:
                 robot.drive(VEL_RETRO_RESCATE, 0)
-                wait(2)
+                wait(5)
             robot.stop()
             rescate_retroceso = True
-            vel_actual = VEL_CURVA
 
         if ultimo_error_valido >= 0:
             robot.drive(0, GIRO_RESCATE)
         else:
             robot.drive(0, -GIRO_RESCATE)
-        wait(2)
+        wait(5)
         continue
 
     # --------------------------------------------------
@@ -186,21 +173,19 @@ while True:
         t = StopWatch()
         while t.time() < IMPULSO_CURVA_MS:
             robot.drive(VEL_CURVA, 0)
-            wait(2)
+            wait(5)
 
         t = StopWatch()
         while t.time() < 2500:
             robot.drive(VEL_90, -GIRO_90)
-            wait(2)
+            wait(5)
             if zona(sensor_centro.reflection()) == 0:
                 break
 
         robot.stop()
-        wait(15)
+        wait(30)
         ultimo_error_valido = -1
         error_previo = 0
-        err_h0 = err_h1 = err_h2 = 0
-        vel_actual = VEL_CURVA
         cooldown_timer.reset()
         cooldown_duracion = COOLDOWN_CURVA_MS
         continue
@@ -215,81 +200,47 @@ while True:
         t = StopWatch()
         while t.time() < IMPULSO_CURVA_MS:
             robot.drive(VEL_CURVA, 0)
-            wait(2)
+            wait(5)
 
         t = StopWatch()
         while t.time() < 2500:
             robot.drive(VEL_90, GIRO_90)
-            wait(2)
+            wait(5)
             if zona(sensor_centro.reflection()) == 0:
                 break
 
         robot.stop()
-        wait(15)
+        wait(30)
         ultimo_error_valido = 1
         error_previo = 0
-        err_h0 = err_h1 = err_h2 = 0
-        vel_actual = VEL_CURVA
         cooldown_timer.reset()
         cooldown_duracion = COOLDOWN_CURVA_MS
         continue
 
     # --------------------------------------------------
-    # CASO 5: SIGUELÍNEAS PD
+    # CASO 5: SIGUELÍNEAS PD (mismo que el original)
     # --------------------------------------------------
     ev3.light.on(Color.GREEN)
 
-    error_crudo = l_izq - l_der
-
-    # Media móvil de 3 muestras para suavizar ruido
-    err_h2 = err_h1
-    err_h1 = err_h0
-    err_h0 = error_crudo
-    error = int((err_h0 + err_h1 + err_h2) / 3)
+    error = l_izq - l_der
 
     if abs(error) > 5:
         ultimo_error_valido = error
 
-    # Recta confirmada: centro negro + laterales blancos + error bajo
-    recta_confirmada = (ce == 0 and iz == 2 and de == 2 and abs(error) < BANDA_MUERTA)
-
-    if recta_confirmada:
-        # Banda muerta: acelerar progresivamente hacia VEL_MAX
-        vel_actual = min(vel_actual + 15, VEL_MAX)
-        robot.drive(vel_actual, 0)
-        error_previo = 0
+    if ce == 0:
+        velocidad = VEL_RECTA
+        kp_actual = KP * 0.55
+    elif ce == 1:
+        velocidad = VEL_CURVA
+        kp_actual = KP
     else:
-        # Velocidad continua: menos error = más rápido
-        error_abs = abs(error)
-        if ce == 0:
-            # Centro en negro: velocidad proporcional entre VEL_CURVA y VEL_RECTA
-            factor = max(0, 1 - error_abs / 40)
-            vel_objetivo = VEL_CURVA + int((VEL_RECTA - VEL_CURVA) * factor)
-            kp_actual = KP * 0.55
-            kd_actual = KD_RECTA
-        elif ce == 1:
-            # Centro en gris: velocidad proporcional
-            factor = max(0, 1 - error_abs / 50)
-            vel_objetivo = int(VEL_CURVA * 0.75) + int((VEL_CURVA - VEL_CURVA * 0.75) * factor)
-            kp_actual = KP
-            kd_actual = KD_CURVA
-        else:
-            # Centro en blanco: velocidad mínima, máxima corrección
-            vel_objetivo = int(VEL_CURVA * 0.6)
-            kp_actual = KP * 1.4
-            kd_actual = KD_CURVA
+        velocidad = VEL_CURVA * 0.75
+        kp_actual = KP * 1.4
 
-        # Frenado progresivo: baja rápido, sube gradual
-        if vel_objetivo < vel_actual:
-            vel_actual = vel_actual - min(30, vel_actual - vel_objetivo)
-        else:
-            vel_actual = vel_actual + min(10, vel_objetivo - vel_actual)
+    derivada = error - error_previo
+    giro = (error * kp_actual) + (derivada * KD)
+    giro = max(-GIRO_90, min(GIRO_90, giro))
 
-        derivada = error - error_previo
-        giro = (error * kp_actual) + (derivada * kd_actual)
-        giro = max(-GIRO_90, min(GIRO_90, giro))
-
-        robot.drive(vel_actual, giro)
-        error_previo = error
-
-    wait(2)
+    robot.drive(velocidad, giro)
+    error_previo = error
+    wait(5)
