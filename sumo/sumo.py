@@ -9,6 +9,8 @@ ev3 = EV3Brick()
 motor_izquierdo = Motor(Port.D)
 motor_derecho = Motor(Port.A)
 robot = DriveBase(motor_izquierdo, motor_derecho, 55.5, 95)
+robot.settings(straight_speed=1000, straight_acceleration=1500,
+               turn_rate=300, turn_acceleration=1200)
 
 sensor_izq     = ColorSensor(Port.S4)
 sensor_der     = ColorSensor(Port.S1)
