@@ -35,6 +35,11 @@ en_diamante         = False
 cooldown            = 0
 temporizador        = StopWatch()
 
+# Historial para media móvil (3 muestras)
+err_h0 = 0
+err_h1 = 0
+err_h2 = 0
+
 def zona(val):
     if val < UMBRAL_NEGRO:
         return 0
@@ -189,7 +194,13 @@ while True:
     # --------------------------------------------------
     ev3.light.on(Color.GREEN)
 
-    error = l_izq - l_der
+    error_crudo = l_izq - l_der
+
+    # Media móvil de 3 muestras para suavizar ruido
+    err_h2 = err_h1
+    err_h1 = err_h0
+    err_h0 = error_crudo
+    error = (err_h0 + err_h1 + err_h2) // 3
 
     if abs(error) > 5:
         ultimo_error_valido = error
