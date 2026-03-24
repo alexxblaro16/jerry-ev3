@@ -92,25 +92,30 @@ while True:
 
     distancia = sensor_us.distance()
 
+    # Cachear lecturas de borde (evita releer sensores múltiples veces)
+    b_izq = sensor_izq.reflection() < UMBRAL_NEGRO
+    b_der = sensor_der.reflection() < UMBRAL_NEGRO
+    b_tras = sensor_trasero.reflection() < UMBRAL_NEGRO
+
     # PRIORIDAD 1A: BORDE TRASERO
-    if borde_trasero():
+    if b_tras:
         ev3.light.on(Color.RED)
         temporizador.reset()
         while temporizador.time() < TIEMPO_AVANCE_MS:
             robot.drive(VEL_AVANCE, 0)
-            wait(5)
-            if not borde_trasero():
+            wait(2)
+            if sensor_trasero.reflection() >= UMBRAL_NEGRO:
                 break
         continue
 
     # PRIORIDAD 1B: BORDE FRONTAL
-    if borde_frontal():
+    if b_izq or b_der:
         ev3.light.on(Color.RED)
 
-        if borde_izq() and not borde_der():
+        if b_izq and not b_der:
             giro_escape = 200
             ultimo_giro = 1
-        elif borde_der() and not borde_izq():
+        elif b_der and not b_izq:
             giro_escape = -200
             ultimo_giro = -1
         else:
@@ -119,17 +124,13 @@ while True:
         temporizador.reset()
         while temporizador.time() < TIEMPO_RETRO_MS:
             robot.drive(VEL_RETRO, 0)
-            wait(5)
-            if not borde_frontal():
-                break
+            wait(2)
 
         temporizador.reset()
         while temporizador.time() < TIEMPO_GIRO_MS:
             robot.drive(0, giro_escape)
-            wait(5)
+            wait(2)
 
-        robot.stop()
-        wait(30)
         continue
 
     # PRIORIDAD 2: RIVAL DETECTADO
