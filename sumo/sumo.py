@@ -137,10 +137,10 @@ while True:
     if distancia < UMBRAL_US:
         ev3.light.on(Color.RED)
         robot.drive(VEL_ATAQUE, 0)
-        wait(5)
+        wait(2)
         continue
 
     # PRIORIDAD 3: BÚSQUEDA
     ev3.light.on(Color.YELLOW)
     robot.drive(VEL_BUSQUEDA, 0)
-    wait(5)
+    wait(2)
