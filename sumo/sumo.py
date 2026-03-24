@@ -18,26 +18,82 @@ sensor_us      = UltrasonicSensor(Port.S2)
 sensor_trasero = ColorSensor(Port.S3)
 
 VEL_ATAQUE   = 1000
-VEL_BUSQUEDA = 400
-VEL_RETRO    = -500
+VEL_BUSQUEDA = 300
+VEL_RETRO    = -600
 VEL_AVANCE   = 800
 
-UMBRAL_US       = 400
-UMBRAL_US_CERCA = 150   # Rival muy cerca, embestida máxima
-UMBRAL_NEGRO    = 25
+UMBRAL_US    = 400
+UMBRAL_NEGRO = 25
 
-TIEMPO_RETRO_MS    = 300
-TIEMPO_GIRO_MS     = 600
-TIEMPO_AVANCE_MS   = 250
-TIEMPO_GIRO_180_MS = 500
-GIRO_BUSQUEDA    = 80
+TIEMPO_RETRO_MS  = 200
+TIEMPO_GIRO_MS   = 400
+TIEMPO_AVANCE_MS = 200
 
-ultimo_giro      = 1
-dir_busqueda     = 1
-rival_visto      = False
-temporizador     = StopWatch()
-busqueda_timer   = StopWatch()
+ultimo_giro    = 1
+temporizador   = StopWatch()
+busqueda_timer = StopWatch()
 
+def en_borde():
+    """Comprueba si ALGÚN sensor toca borde negro"""
+    return (sensor_izq.reflection() < UMBRAL_NEGRO or
+            sensor_der.reflection() < UMBRAL_NEGRO or
+            sensor_trasero.reflection() < UMBRAL_NEGRO)
+
+def borde_frontal():
+    return (sensor_izq.reflection() < UMBRAL_NEGRO or
+            sensor_der.reflection() < UMBRAL_NEGRO)
+
+def borde_trasero():
+    return sensor_trasero.reflection() < UMBRAL_NEGRO
+
+def escapar_borde():
+    """Escapa del borde y vuelve al centro. SIEMPRE se ejecuta completo."""
+    global ultimo_giro
+    robot.stop()
+
+    b_izq = sensor_izq.reflection() < UMBRAL_NEGRO
+    b_der = sensor_der.reflection() < UMBRAL_NEGRO
+    b_tras = sensor_trasero.reflection() < UMBRAL_NEGRO
+
+    if b_tras:
+        # Borde trasero: avanzar
+        temporizador.reset()
+        while temporizador.time() < TIEMPO_AVANCE_MS:
+            robot.drive(VEL_AVANCE, 0)
+            wait(2)
+            # Si ahora toca borde frontal, parar
+            if borde_frontal():
+                break
+        robot.stop()
+    else:
+        # Borde frontal: retroceder
+        if b_izq and not b_der:
+            giro = 200
+            ultimo_giro = 1
+        elif b_der and not b_izq:
+            giro = -200
+            ultimo_giro = -1
+        else:
+            giro = ultimo_giro * 200
+
+        temporizador.reset()
+        while temporizador.time() < TIEMPO_RETRO_MS:
+            robot.drive(VEL_RETRO, 0)
+            wait(2)
+            # Si ahora toca borde trasero, parar
+            if borde_trasero():
+                break
+
+        temporizador.reset()
+        while temporizador.time() < TIEMPO_GIRO_MS:
+            robot.drive(0, giro)
+            wait(2)
+
+    robot.stop()
+
+# ==========================================
+# PANTALLA INICIO
+# ==========================================
 ev3.light.on(Color.ORANGE)
 ev3.screen.clear()
 ev3.screen.print("    SUMO EV3   ")
@@ -54,141 +110,78 @@ wait(300)
 for i in range(5, 0, -1):
     ev3.screen.clear()
     ev3.screen.print("  CUENTA ATRAS ")
-    ev3.screen.print("               ")
     ev3.screen.print("      " + str(i) + "        ")
     ev3.speaker.beep(frequency=600, duration=100)
     ev3.light.on(Color.ORANGE)
-    wait(1000)
+    wait(900)
 
 ev3.speaker.beep(frequency=1000, duration=200)
 ev3.screen.clear()
 ev3.screen.print("  COMBATIENDO  ")
-ev3.screen.print("               ")
-ev3.screen.print("  CENTER para  ")
-ev3.screen.print("    pausar     ")
+ev3.screen.print("  CENTER=pausa ")
 ev3.light.on(Color.GREEN)
 
+# ==========================================
+# BUCLE PRINCIPAL
+# ==========================================
 while True:
 
+    # --- PAUSA ---
     if Button.CENTER in ev3.buttons.pressed():
         robot.stop()
         ev3.light.on(Color.ORANGE)
-        ev3.speaker.beep(frequency=400, duration=200)
         ev3.screen.clear()
         ev3.screen.print("   PAUSADO     ")
-        ev3.screen.print("               ")
-        ev3.screen.print("  Pulsa CENTER ")
-        ev3.screen.print("  para seguir  ")
-        ev3.screen.print("       :)      ")
+        ev3.screen.print("  CENTER=seguir")
         wait(400)
         while Button.CENTER not in ev3.buttons.pressed():
             wait(10)
         wait(300)
-        ev3.speaker.beep(frequency=800, duration=100)
         ev3.screen.clear()
         ev3.screen.print("  COMBATIENDO  ")
-        ev3.screen.print("               ")
-        ev3.screen.print("  CENTER para  ")
-        ev3.screen.print("    pausar     ")
+        ev3.screen.print("  CENTER=pausa ")
         ev3.light.on(Color.GREEN)
         wait(200)
 
+    # === PRIORIDAD ABSOLUTA: BORDE ===
+    if en_borde():
+        ev3.light.on(Color.RED)
+        escapar_borde()
+        continue
+
+    # === RIVAL DETECTADO: ATACAR ===
     distancia = sensor_us.distance()
 
-    # Cachear lecturas de borde (evita releer sensores múltiples veces)
-    b_izq = sensor_izq.reflection() < UMBRAL_NEGRO
-    b_der = sensor_der.reflection() < UMBRAL_NEGRO
-    b_tras = sensor_trasero.reflection() < UMBRAL_NEGRO
-
-    # PRIORIDAD 1A: BORDE TRASERO (el rival empuja por detrás)
-    if b_tras:
-        ev3.light.on(Color.RED)
-
-        # Avanzar para alejarse del borde
-        temporizador.reset()
-        while temporizador.time() < TIEMPO_AVANCE_MS:
-            robot.drive(VEL_AVANCE, 0)
-            wait(2)
-            if sensor_trasero.reflection() >= UMBRAL_NEGRO:
-                break
-
-        # Girar 180° para encarar al rival
-        temporizador.reset()
-        while temporizador.time() < TIEMPO_GIRO_180_MS:
-            robot.drive(0, 300)
-            wait(2)
-
-        # Si el rival está ahí, atacar
-        if sensor_us.distance() < UMBRAL_US:
-            robot.drive(VEL_ATAQUE, 0)
-            rival_visto = True
-            busqueda_timer.reset()
-
-        continue
-
-    # PRIORIDAD 1B: BORDE FRONTAL
-    if b_izq or b_der:
-        ev3.light.on(Color.RED)
-
-        if b_izq and not b_der:
-            giro_escape = 200
-            ultimo_giro = 1
-        elif b_der and not b_izq:
-            giro_escape = -200
-            ultimo_giro = -1
-        else:
-            giro_escape = ultimo_giro * 200
-
-        temporizador.reset()
-        while temporizador.time() < TIEMPO_RETRO_MS:
-            robot.drive(VEL_RETRO, 0)
-            wait(2)
-
-        temporizador.reset()
-        while temporizador.time() < TIEMPO_GIRO_MS:
-            robot.drive(0, giro_escape)
-            wait(2)
-
-        # Si el rival sigue ahí tras escapar, atacar inmediatamente
-        if sensor_us.distance() < UMBRAL_US:
-            robot.drive(VEL_ATAQUE, 0)
-            rival_visto = True
-            busqueda_timer.reset()
-
-        continue
-
-    # PRIORIDAD 2: RIVAL DETECTADO
     if distancia < UMBRAL_US:
         ev3.light.on(Color.RED)
-        robot.drive(VEL_ATAQUE, 0)
-        rival_visto = True
         busqueda_timer.reset()
 
-        # Si está muy cerca, embestida sostenida sin soltar
-        if distancia < UMBRAL_US_CERCA:
-            temporizador.reset()
-            while temporizador.time() < 400:
-                robot.drive(VEL_ATAQUE, 0)
-                # Pero si toca borde, salir inmediatamente
-                if sensor_izq.reflection() < UMBRAL_NEGRO or sensor_der.reflection() < UMBRAL_NEGRO:
-                    break
-                wait(2)
+        # Atacar mientras lo vea y no toque borde
+        while sensor_us.distance() < UMBRAL_US:
+            robot.drive(VEL_ATAQUE, 0)
+            wait(2)
 
-        wait(2)
+            # Si toca borde, escapar INMEDIATAMENTE
+            if en_borde():
+                escapar_borde()
+                break
         continue
 
-    # PRIORIDAD 3: BÚSQUEDA
+    # === BÚSQUEDA: girar buscando rival ===
     ev3.light.on(Color.YELLOW)
 
-    # Si acabamos de perder al rival, girar hacia donde lo vimos
-    if rival_visto and busqueda_timer.time() < 800:
-        robot.drive(VEL_BUSQUEDA // 2, dir_busqueda * 150)
+    # Girar en el sitio buscando al rival (más efectivo que ir recto)
+    if busqueda_timer.time() < 1000:
+        robot.drive(0, ultimo_giro * 200)
     else:
-        # Búsqueda en arco: barre más área que ir recto
-        rival_visto = False
+        # Avanzar un poco y volver a buscar girando
+        robot.drive(VEL_BUSQUEDA, 0)
         if busqueda_timer.time() > 1500:
-            dir_busqueda = -dir_busqueda
+            ultimo_giro = -ultimo_giro
             busqueda_timer.reset()
-        robot.drive(VEL_BUSQUEDA, dir_busqueda * GIRO_BUSQUEDA)
+
+    # Protección de borde incluso en búsqueda
+    if en_borde():
+        escapar_borde()
 
     wait(2)
