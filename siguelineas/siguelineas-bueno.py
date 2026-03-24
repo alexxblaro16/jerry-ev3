@@ -14,18 +14,15 @@ sensor_izq    = ColorSensor(Port.S4)
 sensor_centro = ColorSensor(Port.S3)
 sensor_der    = ColorSensor(Port.S1)
 
-VEL_RECTA  = 500
-VEL_CURVA  = 160
-VEL_90     = 65
+VEL_RECTA  = 200
+VEL_CURVA  = 90
+VEL_90     = 45
 
-GIRO_90      = 200
+GIRO_90      = 190
 GIRO_RESCATE = 130
 
 KP = 1.4
 KD = 4.5
-
-robot.settings(straight_speed=VEL_RECTA, straight_acceleration=1000,
-               turn_rate=GIRO_90, turn_acceleration=600)
 
 UMBRAL_NEGRO  = 25
 UMBRAL_BLANCO = 60
@@ -120,7 +117,7 @@ while True:
             wait(5)
 
         robot.drive(VEL_CURVA, 0)
-        wait(60)
+        wait(80)
 
         en_diamante = False
         cooldown = 30
@@ -145,7 +142,7 @@ while True:
     if iz == 0 and ce == 2 and de == 2 and cooldown == 0:
         ev3.light.on(Color.YELLOW)
         robot.stop()
-        wait(30)
+        wait(60)
 
         t = StopWatch()
         while t.time() < 2500:
@@ -155,7 +152,7 @@ while True:
                 break
 
         robot.stop()
-        wait(20)
+        wait(40)
         ultimo_error_valido = -1
         error_previo = 0
         cooldown = 20
@@ -167,7 +164,7 @@ while True:
     if de == 0 and ce == 2 and iz == 2 and cooldown == 0:
         ev3.light.on(Color.YELLOW)
         robot.stop()
-        wait(30)
+        wait(60)
 
         t = StopWatch()
         while t.time() < 2500:
@@ -177,7 +174,7 @@ while True:
                 break
 
         robot.stop()
-        wait(20)
+        wait(40)
         ultimo_error_valido = 1
         error_previo = 0
         cooldown = 20
@@ -206,10 +203,6 @@ while True:
     derivada = error - error_previo
     giro = (error * kp_actual) + (derivada * KD)
     giro = max(-GIRO_90, min(GIRO_90, giro))
-
-    # En recta, ignorar correcciones de ruido
-    if ce == 0 and abs(error) < 6:
-        giro = 0
 
     robot.drive(velocidad, giro)
     error_previo = error
