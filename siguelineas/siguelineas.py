@@ -116,12 +116,14 @@ while True:
             robot.drive(300, 0)
             wait(5)
 
-        robot.drive(VEL_RECTA, 0)
-        wait(60)
+        # Siempre tomar la derecha al salir del diamante
+        robot.drive(VEL_CURVA, 40)
+        wait(120)
 
         en_diamante = False
         cooldown = 30
         error_previo = 0
+        ultimo_error_valido = 1
         continue
 
     # --------------------------------------------------
