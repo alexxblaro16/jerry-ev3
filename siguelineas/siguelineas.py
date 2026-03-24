@@ -19,10 +19,10 @@ VEL_RECTA  = 200   # Centro en negro pero con algo de error
 VEL_CURVA  = 100   # Centro en gris (entrando en curva)
 VEL_90     = 65
 
-GIRO_90      = 200
-GIRO_RESCATE     = 130
-VEL_RETRO_RESCATE = -80
-TIEMPO_RETRO_RESCATE_MS = 100
+GIRO_90              = 200
+GIRO_RESCATE         = 130
+VEL_RETRO_RESCATE    = -80
+TIEMPO_RETRO_RESCATE = 100
 
 KP       = 1.4
 KD_RECTA = 1.5    # Derivada suave en recta (no amplifica ruido)
@@ -166,7 +166,7 @@ while True:
         # Retroceder un poco antes de girar (solo la primera vez)
         if not rescate_retroceso:
             t = StopWatch()
-            while t.time() < TIEMPO_RETRO_RESCATE_MS:
+            while t.time() < TIEMPO_RETRO_RESCATE:
                 robot.drive(VEL_RETRO_RESCATE, 0)
                 wait(2)
             robot.stop()
