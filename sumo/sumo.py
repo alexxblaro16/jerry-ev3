@@ -22,12 +22,12 @@ VEL_BUSQUEDA = 300
 VEL_RETRO    = -600
 VEL_AVANCE   = 800
 
-UMBRAL_US    = 400
+UMBRAL_US    = 95
 UMBRAL_NEGRO = 25
 
-TIEMPO_RETRO_MS  = 200
-TIEMPO_GIRO_MS   = 400
-TIEMPO_AVANCE_MS = 200
+TIEMPO_RETRO_MS  = 150
+TIEMPO_GIRO_MS   = 300
+TIEMPO_AVANCE_MS = 150
 
 ultimo_giro    = 1
 temporizador   = StopWatch()
@@ -56,13 +56,15 @@ def escapar_borde():
     b_tras = sensor_trasero.reflection() < UMBRAL_NEGRO
 
     if b_tras:
-        # Borde trasero: avanzar
+        # Borde trasero: avanzar lo justo para salir del borde
         temporizador.reset()
         while temporizador.time() < TIEMPO_AVANCE_MS:
             robot.drive(VEL_AVANCE, 0)
             wait(2)
-            # Si ahora toca borde frontal, parar
             if borde_frontal():
+                break
+            # Si ya salió del borde trasero, dejar de avanzar
+            if not borde_trasero():
                 break
         robot.stop()
     else:
@@ -88,6 +90,12 @@ def escapar_borde():
         while temporizador.time() < TIEMPO_GIRO_MS:
             robot.drive(0, giro)
             wait(2)
+            # Si al girar el trasero toca borde, parar el giro
+            if borde_trasero():
+                break
+            # Si al girar el frontal vuelve a tocar, parar también
+            if borde_frontal():
+                break
 
     robot.stop()
 
