@@ -14,15 +14,19 @@ sensor_izq    = ColorSensor(Port.S4)
 sensor_centro = ColorSensor(Port.S3)
 sensor_der    = ColorSensor(Port.S1)
 
-VEL_RECTA  = 200
-VEL_CURVA  = 90
-VEL_90     = 45
+VEL_RECTA  = 400
+VEL_CURVA  = 140
+VEL_90     = 60
 
-GIRO_90      = 190
+GIRO_90      = 200
 GIRO_RESCATE = 130
 
 KP = 1.4
 KD = 4.5
+
+# Aceleración máxima para alcanzar y frenar velocidades rápido
+robot.settings(straight_speed=VEL_RECTA, straight_acceleration=900,
+               turn_rate=GIRO_90, turn_acceleration=600)
 
 UMBRAL_NEGRO  = 25
 UMBRAL_BLANCO = 60
@@ -113,7 +117,7 @@ while True:
         temporizador.reset()
 
         while temporizador.time() < TIEMPO_DIAMANTE_MS:
-            robot.drive(300, 0)
+            robot.drive(VEL_RECTA, 0)
             wait(5)
 
         # Siempre tomar la derecha al salir del diamante
@@ -144,7 +148,7 @@ while True:
     if iz == 0 and ce == 2 and de == 2 and cooldown == 0:
         ev3.light.on(Color.YELLOW)
         robot.stop()
-        wait(60)
+        wait(30)
 
         t = StopWatch()
         while t.time() < 2500:
@@ -154,7 +158,7 @@ while True:
                 break
 
         robot.stop()
-        wait(40)
+        wait(20)
         ultimo_error_valido = -1
         error_previo = 0
         cooldown = 20
@@ -166,7 +170,7 @@ while True:
     if de == 0 and ce == 2 and iz == 2 and cooldown == 0:
         ev3.light.on(Color.YELLOW)
         robot.stop()
-        wait(60)
+        wait(30)
 
         t = StopWatch()
         while t.time() < 2500:
@@ -176,7 +180,7 @@ while True:
                 break
 
         robot.stop()
-        wait(40)
+        wait(20)
         ultimo_error_valido = 1
         error_previo = 0
         cooldown = 20
