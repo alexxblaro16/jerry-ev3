@@ -228,17 +228,23 @@ while True:
         robot.drive(VEL_MAX, 0)
         error_previo = 0
     else:
-        # PD con velocidad y KD adaptativos
+        # Velocidad continua: menos error = más rápido
+        error_abs = abs(error)
         if ce == 0:
-            velocidad = VEL_RECTA
+            # Centro en negro: velocidad proporcional entre VEL_RECTA y VEL_MAX
+            factor = max(0, 1 - error_abs / 40)
+            velocidad = VEL_CURVA + int((VEL_RECTA - VEL_CURVA) * factor)
             kp_actual = KP * 0.55
             kd_actual = KD_RECTA
         elif ce == 1:
-            velocidad = VEL_CURVA
+            # Centro en gris: velocidad proporcional entre VEL_CURVA*0.75 y VEL_CURVA
+            factor = max(0, 1 - error_abs / 50)
+            velocidad = int(VEL_CURVA * 0.75) + int((VEL_CURVA - VEL_CURVA * 0.75) * factor)
             kp_actual = KP
             kd_actual = KD_CURVA
         else:
-            velocidad = VEL_CURVA * 0.75
+            # Centro en blanco: velocidad mínima, máxima corrección
+            velocidad = int(VEL_CURVA * 0.6)
             kp_actual = KP * 1.4
             kd_actual = KD_CURVA
 
