@@ -14,18 +14,18 @@ sensor_izq    = ColorSensor(Port.S4)
 sensor_centro = ColorSensor(Port.S3)
 sensor_der    = ColorSensor(Port.S1)
 
-VEL_RECTA  = 350
-VEL_CURVA  = 120
-VEL_90     = 55
+VEL_RECTA  = 500
+VEL_CURVA  = 160
+VEL_90     = 65
 
-GIRO_90      = 195
+GIRO_90      = 200
 GIRO_RESCATE = 130
 
 KP = 1.4
 KD = 4.5
 
-robot.settings(straight_speed=VEL_RECTA, straight_acceleration=800,
-               turn_rate=GIRO_90, turn_acceleration=500)
+robot.settings(straight_speed=VEL_RECTA, straight_acceleration=1000,
+               turn_rate=GIRO_90, turn_acceleration=600)
 
 UMBRAL_NEGRO  = 25
 UMBRAL_BLANCO = 60
@@ -120,7 +120,7 @@ while True:
             wait(5)
 
         robot.drive(VEL_CURVA, 0)
-        wait(80)
+        wait(60)
 
         en_diamante = False
         cooldown = 30
@@ -145,7 +145,7 @@ while True:
     if iz == 0 and ce == 2 and de == 2 and cooldown == 0:
         ev3.light.on(Color.YELLOW)
         robot.stop()
-        wait(60)
+        wait(30)
 
         t = StopWatch()
         while t.time() < 2500:
@@ -155,7 +155,7 @@ while True:
                 break
 
         robot.stop()
-        wait(40)
+        wait(20)
         ultimo_error_valido = -1
         error_previo = 0
         cooldown = 20
@@ -167,7 +167,7 @@ while True:
     if de == 0 and ce == 2 and iz == 2 and cooldown == 0:
         ev3.light.on(Color.YELLOW)
         robot.stop()
-        wait(60)
+        wait(30)
 
         t = StopWatch()
         while t.time() < 2500:
@@ -177,7 +177,7 @@ while True:
                 break
 
         robot.stop()
-        wait(40)
+        wait(20)
         ultimo_error_valido = 1
         error_previo = 0
         cooldown = 20
