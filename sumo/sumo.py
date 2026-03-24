@@ -20,14 +20,16 @@ sensor_trasero = ColorSensor(Port.S3)
 VEL_ATAQUE   = 1000
 VEL_BUSQUEDA = 400
 VEL_RETRO    = -500
-VEL_AVANCE   = 600
+VEL_AVANCE   = 800
 
-UMBRAL_US    = 400   # Rival a 122mm, sin nada 660mm → 400 perfecto
-UMBRAL_NEGRO = 25
+UMBRAL_US       = 400
+UMBRAL_US_CERCA = 150   # Rival muy cerca, embestida máxima
+UMBRAL_NEGRO    = 25
 
-TIEMPO_RETRO_MS  = 300
-TIEMPO_GIRO_MS   = 600
-TIEMPO_AVANCE_MS = 400
+TIEMPO_RETRO_MS    = 300
+TIEMPO_GIRO_MS     = 600
+TIEMPO_AVANCE_MS   = 250
+TIEMPO_GIRO_180_MS = 500
 GIRO_BUSQUEDA    = 80
 
 ultimo_giro      = 1
@@ -98,15 +100,30 @@ while True:
     b_der = sensor_der.reflection() < UMBRAL_NEGRO
     b_tras = sensor_trasero.reflection() < UMBRAL_NEGRO
 
-    # PRIORIDAD 1A: BORDE TRASERO
+    # PRIORIDAD 1A: BORDE TRASERO (el rival empuja por detrás)
     if b_tras:
         ev3.light.on(Color.RED)
+
+        # Avanzar para alejarse del borde
         temporizador.reset()
         while temporizador.time() < TIEMPO_AVANCE_MS:
             robot.drive(VEL_AVANCE, 0)
             wait(2)
             if sensor_trasero.reflection() >= UMBRAL_NEGRO:
                 break
+
+        # Girar 180° para encarar al rival
+        temporizador.reset()
+        while temporizador.time() < TIEMPO_GIRO_180_MS:
+            robot.drive(0, 300)
+            wait(2)
+
+        # Si el rival está ahí, atacar
+        if sensor_us.distance() < UMBRAL_US:
+            robot.drive(VEL_ATAQUE, 0)
+            rival_visto = True
+            busqueda_timer.reset()
+
         continue
 
     # PRIORIDAD 1B: BORDE FRONTAL
@@ -146,6 +163,17 @@ while True:
         robot.drive(VEL_ATAQUE, 0)
         rival_visto = True
         busqueda_timer.reset()
+
+        # Si está muy cerca, embestida sostenida sin soltar
+        if distancia < UMBRAL_US_CERCA:
+            temporizador.reset()
+            while temporizador.time() < 400:
+                robot.drive(VEL_ATAQUE, 0)
+                # Pero si toca borde, salir inmediatamente
+                if sensor_izq.reflection() < UMBRAL_NEGRO or sensor_der.reflection() < UMBRAL_NEGRO:
+                    break
+                wait(2)
+
         wait(2)
         continue
 
