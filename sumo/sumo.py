@@ -60,14 +60,23 @@ while Button.CENTER not in ev3.buttons.pressed():
     wait(10)
 wait(300)
 
-ev3.speaker.beep(frequency=800, duration=100)
+# Cuenta atrás reglamentaria de 5 segundos
+for i in range(5, 0, -1):
+    ev3.screen.clear()
+    ev3.screen.print("  CUENTA ATRAS ")
+    ev3.screen.print("               ")
+    ev3.screen.print("      " + str(i) + "        ")
+    ev3.speaker.beep(frequency=600, duration=100)
+    ev3.light.on(Color.ORANGE)
+    wait(1000)
+
+ev3.speaker.beep(frequency=1000, duration=200)
 ev3.screen.clear()
 ev3.screen.print("  COMBATIENDO  ")
 ev3.screen.print("               ")
 ev3.screen.print("  CENTER para  ")
 ev3.screen.print("    pausar     ")
 ev3.light.on(Color.GREEN)
-wait(500)
 
 while True:
 
