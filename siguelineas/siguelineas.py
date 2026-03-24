@@ -244,4 +244,4 @@ while True:
         robot.drive(velocidad, giro)
         error_previo = error
 
-    wait(5)
+    wait(2)
