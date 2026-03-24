@@ -249,7 +249,7 @@ while True:
     err_h2 = err_h1
     err_h1 = err_h0
     err_h0 = error_crudo
-    error = (err_h0 + err_h1 + err_h2) // 3
+    error = int((err_h0 + err_h1 + err_h2) / 3)
 
     if abs(error) > 5:
         ultimo_error_valido = error
