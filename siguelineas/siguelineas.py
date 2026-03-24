@@ -32,6 +32,10 @@ BANDA_MUERTA  = 8  # Error por debajo de esto en recta = ir recto sin corregir
 
 TIEMPO_DIAMANTE_MS = 220
 
+# Aceleración agresiva para transiciones rápidas entre velocidades
+robot.settings(straight_speed=VEL_MAX, straight_acceleration=800,
+               turn_rate=GIRO_90, turn_acceleration=600)
+
 error_previo        = 0
 ultimo_error_valido = 0
 en_diamante         = False
