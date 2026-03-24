@@ -14,18 +14,21 @@ sensor_izq    = ColorSensor(Port.S4)
 sensor_centro = ColorSensor(Port.S3)
 sensor_der    = ColorSensor(Port.S1)
 
-VEL_RECTA  = 200
-VEL_CURVA  = 90
+VEL_MAX    = 350   # Recta confirmada (centro negro + error bajo)
+VEL_RECTA  = 200   # Centro en negro pero con algo de error
+VEL_CURVA  = 100   # Centro en gris (entrando en curva)
 VEL_90     = 45
 
 GIRO_90      = 190
 GIRO_RESCATE = 130
 
-KP = 1.4
-KD = 4.5
+KP       = 1.4
+KD_RECTA = 1.5    # Derivada suave en recta (no amplifica ruido)
+KD_CURVA = 4.5    # Derivada fuerte en curva (reacción rápida)
 
 UMBRAL_NEGRO  = 25
 UMBRAL_BLANCO = 60
+BANDA_MUERTA  = 8  # Error por debajo de esto en recta = ir recto sin corregir
 
 TIEMPO_DIAMANTE_MS = 220
 
@@ -205,20 +208,33 @@ while True:
     if abs(error) > 5:
         ultimo_error_valido = error
 
-    if ce == 0:
-        velocidad = VEL_RECTA
-        kp_actual = KP * 0.55
-    elif ce == 1:
-        velocidad = VEL_CURVA
-        kp_actual = KP
+    # Recta confirmada: centro negro + laterales blancos + error bajo
+    recta_confirmada = (ce == 0 and iz == 2 and de == 2 and abs(error) < BANDA_MUERTA)
+
+    if recta_confirmada:
+        # Banda muerta: ir recto a máxima velocidad sin correcciones
+        robot.drive(VEL_MAX, 0)
+        error_previo = 0
     else:
-        velocidad = VEL_CURVA * 0.75
-        kp_actual = KP * 1.4
+        # PD con velocidad y KD adaptativos
+        if ce == 0:
+            velocidad = VEL_RECTA
+            kp_actual = KP * 0.55
+            kd_actual = KD_RECTA
+        elif ce == 1:
+            velocidad = VEL_CURVA
+            kp_actual = KP
+            kd_actual = KD_CURVA
+        else:
+            velocidad = VEL_CURVA * 0.75
+            kp_actual = KP * 1.4
+            kd_actual = KD_CURVA
 
-    derivada = error - error_previo
-    giro = (error * kp_actual) + (derivada * KD)
-    giro = max(-GIRO_90, min(GIRO_90, giro))
+        derivada = error - error_previo
+        giro = (error * kp_actual) + (derivada * kd_actual)
+        giro = max(-GIRO_90, min(GIRO_90, giro))
 
-    robot.drive(velocidad, giro)
-    error_previo = error
+        robot.drive(velocidad, giro)
+        error_previo = error
+
     wait(5)
