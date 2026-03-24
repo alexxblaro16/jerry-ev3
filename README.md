@@ -13,13 +13,12 @@ Programa de seguimiento de línea con control **PD (Proporcional-Derivativo)** u
 - Pausa y reanudación con el botón CENTER
 
 ### Sumo
-Programa de combate en ring de sumo con sistema de prioridades:
-1. **Borde trasero** → avanzar (te están empujando fuera)
-2. **Borde frontal** → retroceder y girar (evitar caer)
-3. **Rival detectado** → embestir a máxima velocidad
-4. **Sin detección** → búsqueda avanzando recto
+Programa de combate en ring de sumo redondo con protección de borde absoluta:
+1. **Borde** (prioridad máxima) → escapa sin salirse nunca, comprueba los 3 sensores en cada fase
+2. **Rival detectado** (<300mm) → embestida a máxima velocidad (1000 mm/s), sigue empujando 300ms extra tras perder contacto
+3. **Búsqueda** → giro rápido (300°/s) + avance, ciclos de 1 segundo
 
-Usa 3 sensores de color (izquierdo, derecho y trasero) para detectar bordes y un sensor ultrasónico para localizar al rival.
+Usa 3 sensores de color (izquierdo, derecho y trasero) para detectar bordes y un sensor ultrasónico para localizar al rival. Cuenta atrás de 3 segundos reglamentaria.
 
 ### Mando RC
 Servidor web embebido en el EV3 que sirve una interfaz de control remoto al navegador del móvil. Permite conducir el robot desde cualquier dispositivo conectado a la misma red. Soporta multi-touch para movimientos diagonales (avanzar + girar simultáneamente).
@@ -43,7 +42,7 @@ Servidor web embebido en el EV3 que sirve una interfaz de control remoto al nave
 ```
 jerry/
 ├── siguelineas/
-│   ├── siguelineas.py      # Programa principal siguelineas
+│   ├── siguelineas-bueno.py # Programa principal siguelineas
 │   └── sensorescolor.py    # Utilidad de debug para sensores de color
 ├── sumo/
 │   ├── sumo.py             # Programa principal sumo
