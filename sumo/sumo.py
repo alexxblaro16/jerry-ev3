@@ -28,9 +28,13 @@ UMBRAL_NEGRO = 25
 TIEMPO_RETRO_MS  = 300
 TIEMPO_GIRO_MS   = 600
 TIEMPO_AVANCE_MS = 400
+GIRO_BUSQUEDA    = 80
 
-ultimo_giro  = 1
-temporizador = StopWatch()
+ultimo_giro      = 1
+dir_busqueda     = 1
+rival_visto      = False
+temporizador     = StopWatch()
+busqueda_timer   = StopWatch()
 
 def borde_izq():
     return sensor_izq.reflection() < UMBRAL_NEGRO
@@ -137,10 +141,23 @@ while True:
     if distancia < UMBRAL_US:
         ev3.light.on(Color.RED)
         robot.drive(VEL_ATAQUE, 0)
+        rival_visto = True
+        busqueda_timer.reset()
         wait(2)
         continue
 
     # PRIORIDAD 3: BÚSQUEDA
     ev3.light.on(Color.YELLOW)
-    robot.drive(VEL_BUSQUEDA, 0)
+
+    # Si acabamos de perder al rival, girar hacia donde lo vimos
+    if rival_visto and busqueda_timer.time() < 800:
+        robot.drive(VEL_BUSQUEDA // 2, dir_busqueda * 150)
+    else:
+        # Búsqueda en arco: barre más área que ir recto
+        rival_visto = False
+        if busqueda_timer.time() > 1500:
+            dir_busqueda = -dir_busqueda
+            busqueda_timer.reset()
+        robot.drive(VEL_BUSQUEDA, dir_busqueda * GIRO_BUSQUEDA)
+
     wait(2)
