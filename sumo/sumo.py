@@ -36,18 +36,6 @@ rival_visto      = False
 temporizador     = StopWatch()
 busqueda_timer   = StopWatch()
 
-def borde_izq():
-    return sensor_izq.reflection() < UMBRAL_NEGRO
-
-def borde_der():
-    return sensor_der.reflection() < UMBRAL_NEGRO
-
-def borde_trasero():
-    return sensor_trasero.reflection() < UMBRAL_NEGRO
-
-def borde_frontal():
-    return borde_izq() or borde_der()
-
 ev3.light.on(Color.ORANGE)
 ev3.screen.clear()
 ev3.screen.print("    SUMO EV3   ")
